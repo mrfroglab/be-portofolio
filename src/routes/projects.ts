@@ -1,15 +1,32 @@
 import { Router, Response } from 'express';
 import prisma from '../lib/prisma';
+import { Prisma } from '@prisma/client';
 import { authenticateAdminOrReadToken, authenticateAdminOrWriteToken, AuthenticatedRequest } from '../middleware/auth';
+import { parseProjectInput, slugify, uniqueSlug } from '../lib/project';
 
 const router = Router();
+
+const SLUG_TAKEN = 'Slug sudah dipakai proyek lain.';
+
+const isSlugConflict = (error: unknown) =>
+  error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002';
+
+async function generateSlug(title: string): Promise<string | null> {
+  const base = slugify(title);
+  if (!base) return null;
+  const taken = await prisma.project.findMany({
+    where: { slug: { startsWith: base } },
+    select: { slug: true }
+  });
+  return uniqueSlug(base, taken.map((p) => p.slug as string));
+}
 
 // GET /api/projects - Public route to fetch all visible projects
 router.get('/', async (_req, res: Response) => {
   try {
     const projects = await prisma.project.findMany({
       where: { visible: true },
-      orderBy: { order: 'asc' }
+      orderBy: [{ featured: 'desc' }, { order: 'asc' }]
     });
     return res.json(projects);
   } catch (error) {
@@ -33,27 +50,23 @@ router.get('/admin-list', authenticateAdminOrReadToken, async (_req: Authenticat
 
 // POST /api/admin/projects - Create a new project
 router.post('/', authenticateAdminOrWriteToken, async (req: AuthenticatedRequest, res: Response) => {
-  const { title, description, imageUrl, liveUrl, githubUrl, tags, order, visible } = req.body;
+  const parsed = parseProjectInput(req.body, 'create');
+  if (!parsed.ok) return res.status(400).json({ message: parsed.message });
 
-  if (!title || !description) {
-    return res.status(400).json({ message: 'Judul dan deskripsi proyek wajib diisi.' });
-  }
+  const { title, description, ...rest } = parsed.data as typeof parsed.data & { title: string; description: string };
 
   try {
     const project = await prisma.project.create({
       data: {
+        ...rest,
         title,
         description,
-        imageUrl: imageUrl || null,
-        liveUrl: liveUrl || null,
-        githubUrl: githubUrl || null,
-        tags: Array.isArray(tags) ? tags : [],
-        order: typeof order === 'number' ? order : 0,
-        visible: typeof visible === 'boolean' ? visible : true
+        slug: rest.slug ?? (await generateSlug(title))
       }
     });
     return res.status(201).json(project);
   } catch (error) {
+    if (isSlugConflict(error)) return res.status(409).json({ message: SLUG_TAKEN });
     console.error('Error creating project:', error);
     return res.status(500).json({ message: 'Terjadi kesalahan pada server.' });
   }
@@ -83,17 +96,31 @@ router.put('/reorder', authenticateAdminOrWriteToken, async (req: AuthenticatedR
   }
 });
 
+// GET /api/projects/:slug - Public detail of one visible project
+router.get('/:slug', async (req, res: Response) => {
+  try {
+    const project = await prisma.project.findFirst({
+      where: { slug: req.params.slug, visible: true }
+    });
+    if (!project) return res.status(404).json({ message: 'Proyek tidak ditemukan.' });
+    return res.json(project);
+  } catch (error) {
+    console.error('Error fetching project by slug:', error);
+    return res.status(500).json({ message: 'Terjadi kesalahan pada server.' });
+  }
+});
+
 // PUT /api/admin/projects/:id - Update an existing project
 router.put('/:id', authenticateAdminOrWriteToken, async (req: AuthenticatedRequest, res: Response) => {
-  const { id } = req.params;
-  const { title, description, imageUrl, liveUrl, githubUrl, tags, order, visible } = req.body;
+  const projectId = parseInt(req.params.id);
+  if (isNaN(projectId)) {
+    return res.status(400).json({ message: 'ID proyek tidak valid.' });
+  }
+
+  const parsed = parseProjectInput(req.body, 'update');
+  if (!parsed.ok) return res.status(400).json({ message: parsed.message });
 
   try {
-    const projectId = parseInt(id);
-    if (isNaN(projectId)) {
-      return res.status(400).json({ message: 'ID proyek tidak valid.' });
-    }
-
     const existingProject = await prisma.project.findUnique({
       where: { id: projectId }
     });
@@ -104,20 +131,12 @@ router.put('/:id', authenticateAdminOrWriteToken, async (req: AuthenticatedReque
 
     const updatedProject = await prisma.project.update({
       where: { id: projectId },
-      data: {
-        title: title !== undefined ? title : existingProject.title,
-        description: description !== undefined ? description : existingProject.description,
-        imageUrl: imageUrl !== undefined ? imageUrl : existingProject.imageUrl,
-        liveUrl: liveUrl !== undefined ? liveUrl : existingProject.liveUrl,
-        githubUrl: githubUrl !== undefined ? githubUrl : existingProject.githubUrl,
-        tags: Array.isArray(tags) ? tags : existingProject.tags,
-        order: typeof order === 'number' ? order : existingProject.order,
-        visible: typeof visible === 'boolean' ? visible : existingProject.visible
-      }
+      data: parsed.data
     });
 
     return res.json(updatedProject);
   } catch (error) {
+    if (isSlugConflict(error)) return res.status(409).json({ message: SLUG_TAKEN });
     console.error('Error updating project:', error);
     return res.status(500).json({ message: 'Terjadi kesalahan pada server.' });
   }
