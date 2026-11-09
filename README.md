@@ -27,9 +27,12 @@ Backend API for portfolio website built with Node.js, Express, TypeScript, Prism
 | POST | `/api/auth/register` | Register new user |
 | POST | `/api/auth/login` | Login user |
 | GET | `/api/auth/me` | Get current user |
-| GET | `/api/projects` | List all projects |
+| GET | `/api/projects` | List visible projects, featured first, then by `order` |
+| GET | `/api/projects/:slug` | One visible project by slug (404 if missing or hidden) |
+| GET | `/api/projects/admin-list` | All projects, including hidden (auth) |
 | POST | `/api/projects` | Create project (auth) |
-| PUT | `/api/projects/:id` | Update project (auth) |
+| PUT | `/api/projects/reorder` | Set `order` from `{ orderedIds: number[] }` (auth) |
+| PUT | `/api/projects/:id` | Update project, partial body (auth) |
 | DELETE | `/api/projects/:id` | Delete project (auth) |
 | GET | `/api/blog` | List all blog posts |
 | POST | `/api/blog` | Create blog post (auth) |
@@ -42,6 +45,25 @@ Backend API for portfolio website built with Node.js, Express, TypeScript, Prism
 | POST | `/api/upload` | Upload image (auth) |
 | GET | `/api/cv` | Get CV info |
 | PUT | `/api/cv` | Update CV (auth) |
+
+### Project fields
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `title`, `description` | string | Required on create |
+| `slug` | string \| null | Unique. Generated from `title` on create when omitted (`-2`, `-3` on collision). A taken slug returns 409 |
+| `category` | `"web"` \| `"desktop"` \| `"tool"` | Default `"web"` |
+| `status` | `"live"` \| `"open-source"` \| `"internal"` | Default `"live"` |
+| `year` | string \| null | e.g. `"2026"`, `"2022 - 2024"` |
+| `role` | string \| null | e.g. `"Solo developer"` |
+| `highlights` | string[] | Short feature bullets, default `[]` |
+| `imageUrl`, `liveUrl`, `githubUrl`, `releaseUrl` | string \| null | `releaseUrl` is the download page for desktop apps |
+| `tags` | string[] | |
+| `featured` | boolean | Default `false`; featured projects sort first in the public list |
+| `order` | number | Default `0` |
+| `visible` | boolean | Default `true` |
+
+On create and update, `""` for any nullable string field is stored as `null`. Invalid `category`, `status`, `highlights` or `featured` values return 400.
 
 ## Setup
 
