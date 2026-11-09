@@ -1,4 +1,5 @@
 import { SITE_CONTENT_DEFAULTS } from '../src/lib/siteContentDefaults';
+import { slugify } from '../src/lib/project';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
@@ -31,18 +32,36 @@ async function main() {
         description: 'Platform terintegrasi untuk Lembaga Sertifikasi Profesi Universitas Gadjah Mada. Menyederhanakan proses sertifikasi profesi mulai dari pendaftaran asesi hingga penerbitan sertifikat kompetensi yang terstandarisasi dan diakui BNSP.',
         imageUrl: '/assets/projects/lsp-ugm.png',
         liveUrl: 'https://silsp.trpl.space',
-        githubUrl: 'https://github.com/januarsyah901',
+        githubUrl: null,
         tags: ['Laravel', 'PHP', 'MySQL', 'REST API'],
+        category: 'web',
+        status: 'live',
+        year: '2025',
+        role: 'Web Developer',
+        featured: true,
         order: 1,
         visible: true
       },
       {
         title: "Java Al-'Alim UGM",
-        description: "Website resmi Jama'ah Vokasi Al-'Alim Sekolah Vokasi UGM yang modern dan dinamis. Dilengkapi fitur blog, profil organisasi, dashboard administrasi, dan sistem autentikasi anggota.",
+        description: "Website resmi Jama'ah Vokasi Al-'Alim Sekolah Vokasi UGM, dibangun sebagai monorepo Next.js dan Hono. Pengurus mengelola formulir, agenda kegiatan, dan struktur organisasi dari dashboard dengan login akun UGM.",
         imageUrl: '/assets/projects/java-ugm.png',
-        liveUrl: 'https://javaugm.vercel.app',
-        githubUrl: 'https://github.com/januarsyah901',
-        tags: ['React', 'Next.js', 'TypeScript', 'Vercel'],
+        liveUrl: 'https://javaugm.hallojanu.me',
+        githubUrl: null,
+        tags: ['Next.js', 'Hono', 'Drizzle', 'PostgreSQL', 'NextAuth', 'Docker'],
+        category: 'web',
+        status: 'live',
+        year: '2026',
+        role: 'Lead developer (Ketua Dept. Media)',
+        highlights: [
+          'Monorepo web (Next.js) + api (Hono, OpenAPI) + db (Postgres, RLS)',
+          'Form builder publik /f/slug: validasi ketat, honeypot, rate-limit, ekspor CSV, file jawaban privat',
+          'Agenda kegiatan dari Google Calendar dengan cache dan fallback saat Google down',
+          'Log aktivitas admin append-only yang menjaga privasi data',
+          'Struktur organisasi + modal anggota, dikelola dari dashboard',
+          'Login Google (NextAuth) khusus @mail.ugm.ac.id dengan whitelist & role dari database'
+        ],
+        featured: true,
         order: 2,
         visible: true
       },
@@ -51,8 +70,12 @@ async function main() {
         description: 'Sistem website Penerimaan Peserta Didik Baru (PPDB) untuk MA Unggulan Amanatul Ummah Surabaya. Menampilkan informasi sekolah, berita, panduan pendaftaran, dan formulir online bagi calon peserta didik baru.',
         imageUrl: '/assets/projects/ppdb-mai.png',
         liveUrl: 'https://mai-au.sch.id',
-        githubUrl: 'https://github.com/januarsyah901',
+        githubUrl: null,
         tags: ['PHP', 'Laravel', 'TailwindCSS', 'MySQL'],
+        category: 'web',
+        status: 'live',
+        year: '2022 - 2024',
+        role: 'Web Developer & Asisten IT',
         order: 3,
         visible: true
       },
@@ -61,15 +84,82 @@ async function main() {
         description: "Website resmi Jama'ah Vokasi Al-'Alim berbasis WordPress di domain resmi UGM. Memuat artikel, kegiatan organisasi, dan media dakwah untuk komunitas mahasiswa muslim Sekolah Vokasi UGM.",
         imageUrl: '/assets/projects/java-wordpress.png',
         liveUrl: 'https://javamuslim.sv.ugm.ac.id',
-        githubUrl: 'https://github.com/januarsyah901',
+        githubUrl: null,
         tags: ['WordPress', 'PHP', 'CMS', 'UGM'],
+        category: 'web',
+        status: 'live',
         order: 4,
+        visible: true
+      },
+      {
+        title: 'Cak MaD Editor',
+        description: 'Editor Markdown di browser untuk menulis catatan dan dokumen teknis, termasuk rumus LaTeX dan diagram Mermaid. Dokumen tersimpan otomatis di perangkat dan bisa diekspor ke PDF.',
+        imageUrl: null,
+        liveUrl: 'https://cakmad.vercel.app',
+        githubUrl: 'https://github.com/januarsyah901/CakMaD',
+        tags: ['React 19', 'Vite', 'TailwindCSS', 'CodeMirror'],
+        category: 'tool',
+        status: 'live',
+        year: '2026',
+        role: 'Solo developer',
+        highlights: [
+          'LaTeX via KaTeX & diagram Mermaid',
+          'Editor tabel visual & paste gambar langsung',
+          'Multi-dokumen dengan tab, drag & drop, autosave lokal',
+          'Ekspor PDF A4/A3/Letter dengan margin kustom',
+          'Focus mode, template, dark/light mode'
+        ],
+        featured: true,
+        order: 5,
+        visible: true
+      },
+      {
+        title: 'Cepaty',
+        description: 'Aplikasi menu bar macOS yang menampilkan kecepatan internet dan trafik tiap aplikasi. Berjalan tanpa akses root dan hampir tidak memakai CPU saat di latar belakang.',
+        imageUrl: null,
+        liveUrl: null,
+        githubUrl: 'https://github.com/januarsyah901/cepaty',
+        releaseUrl: 'https://github.com/januarsyah901/cepaty/releases/latest',
+        tags: ['Swift', 'SwiftUI', 'AppKit', 'macOS'],
+        category: 'desktop',
+        status: 'open-source',
+        year: '2026',
+        role: 'Solo developer',
+        highlights: [
+          'Kecepatan unduh/unggah live di menu bar',
+          'Trafik per aplikasi dengan ikon asli macOS',
+          'Tanpa root/kernel extension, CPU 0.0% di background (~45 MB)',
+          'Snapshot nettop periodik + kalkulasi delta (hemat daya)',
+          'Unit test, CI GitHub Actions, installer DMG'
+        ],
+        order: 6,
+        visible: true
+      },
+      {
+        title: 'Boros Token',
+        description: 'Dashboard lokal untuk memantau pemakaian token dan perkiraan biaya beberapa AI coding agent sekaligus. Riwayat disimpan di SQLite dan grafik diperbarui langsung lewat Server-Sent Events.',
+        imageUrl: null,
+        liveUrl: null,
+        githubUrl: 'https://github.com/januarsyah901/boros-token',
+        tags: ['Node.js', 'SQLite', 'SSE', 'Chart.js', 'Docker'],
+        category: 'tool',
+        status: 'open-source',
+        year: '2026',
+        role: 'Solo developer',
+        highlights: [
+          'Pantau token Claude Code, Codex, OpenCode, Grok dalam satu dashboard',
+          'Live update via Server-Sent Events',
+          'Riwayat di SQLite + grafik tren',
+          'Registry harga per model untuk estimasi biaya',
+          'App menu bar macOS native & REST API'
+        ],
+        order: 7,
         visible: true
       }
     ];
 
     for (const proj of projectsData) {
-      await prisma.project.create({ data: proj });
+      await prisma.project.create({ data: { ...proj, slug: slugify(proj.title) } });
     }
     console.log('Projects seeded.');
   } else {
