@@ -15,6 +15,14 @@ model Project {
   liveUrl     String?
   githubUrl   String?
   tags        String[]
+  slug        String?  @unique
+  category    String   @default("web")
+  status      String   @default("live")
+  year        String?
+  role        String?
+  highlights  String[] @default([])
+  releaseUrl  String?
+  featured    Boolean  @default(false)
   order       Int      @default(0)
   visible     Boolean  @default(true)
   createdAt   DateTime @default(now())
